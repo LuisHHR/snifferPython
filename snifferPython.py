@@ -1,4 +1,4 @@
-
+#Realizado por Luis Hector Huanca Rosas
 
 import socket
 from struct import *
@@ -7,8 +7,8 @@ import pcapy
 import sys
 
 print ('-------Sniffer Python-------')
-print ('Luis HEctor Huanca Rosas\tCI: 4848216 LP')
-print('Paralelo B Lic Gallardo\tJueves 16:00 - 18:00')
+print ('Luis Hector Huanca Rosas\t\tCI: 4848216 LP')
+print('Paralelo A Lic Gallardo\t\tJueves 16:00 - 18:00')
 
 
 def main(argv):
@@ -56,7 +56,9 @@ def parse_packet(packet) :
     eth = unpack('!6s6sH' , eth_header)
     eth_protocol = socket.ntohs(eth[2])
     print('Ethernet Header')
-    print ('Destination MAC : ' + eth_addr(packet[0:6]) + '\nSource MAC : ' + eth_addr(packet[6:12]) + '\nProtocol : ' + str(eth_protocol))
+    print("\t|-Destination MAC : " + eth_addr(packet[0:6]))
+    print("\t|-Source MAC      : " + eth_addr(packet[6:12]))
+    print("\t|-Protocol        : " + str(eth_protocol))
 
     #Parse IP packets, IP Protocol number = 8
     if eth_protocol == 8 :
@@ -72,13 +74,29 @@ def parse_packet(packet) :
         ihl = version_ihl & 0xF
 
         iph_length = ihl * 4
-
+        #Estructura de la IP Header
+        ip_tos = iph[1]
+        ip_len = iph[2]
+        ip_id = iph[3]
+        ip_off = iph[4]
+        #--------------------------------
         ttl = iph[5]
         protocol = iph[6]
-        s_addr = socket.inet_ntoa(iph[8]);
-        d_addr = socket.inet_ntoa(iph[9]);
+        ip_sum = iph[7]
+        s_addr = socket.inet_ntoa(iph[8])
+        d_addr = socket.inet_ntoa(iph[9])
 
-        print ('Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr))
+        print("\nIP Header")
+        print("\t|-IP Version       : " + str(version))
+        print("\t|-IP Header Length : " + str(ihl) + "DWORDS or " + str(ihl*32//8) + "bytes")
+        print("\t|-Type of Service  : " + str(ip_tos))
+        print("\t|-IP total length  : " + str(ip_len*32//8) + " Bytes (Size of Packet)")
+        print("\t|-Identification   : " + str(ip_id))
+        print("\t|-TTL              : " + str(ttl))
+        print("\t|-Protocol         : " + str(protocol))
+        print("\t|-Checksum         : " + str(ip_sum))
+        print("\t|-Source IP        : " + str(s_addr))
+        print("\t|-Destination IP   : " + str(d_addr))
 
         #TCP protocol
         if protocol == 6 :
@@ -94,8 +112,29 @@ def parse_packet(packet) :
             acknowledgement = tcph[3]
             doff_reserved = tcph[4]
             tcph_length = doff_reserved >> 4
+            tcph_flags = tcph[5]
+            tcph_window_size = tcph[6]
+            tcph_checksum = tcph[7]
+            tcph_urgent_pointer = tcph[8]
+            binario = '{0:b}'.format(tcph_flags)
+            #while binario.lenght < 5:
+            #    binario = "0" + binario
 
-            print ('Source Port : ' + str(source_port) + ' Dest Port : ' + str(dest_port) + ' Sequence Number : ' + str(sequence) + ' Acknowledgement : ' + str(acknowledgement) + ' TCP header length : ' + str(tcph_length))
+            print('\nTCP Header')
+            print("\t|-Source Port          : " + str(source_port))
+            print("\t|-Destination Port     : " + str(dest_port))
+            print("\t|-Sequence Number      : " + str(sequence))
+            print("\t|-Acknowledge Number   : " + str(acknowledgement))
+            print("\t|-Header lenght        : " + str(tcph_length) + " DWORDS or " + str(tcph_length*32//8) + "bytes")
+            print("\t|-Urgent Flag          : " + str(tcph_flags))
+            print("\t|-Acknowledgement Flag : " + str(binario[0]))
+            print("\t|-Push Flag            : " + str(binario[1]))
+            print("\t|-Reset Flag           : " + str(binario[2]))
+            print("\t|-Synchronise Flag     : " + str(binario[3]))
+            print("\t|-Finish Flag          : " + str(binario[4]))
+            print("\t|-Windows              : " + str(tcph_window_size))
+            print("\t|-Checksum             : " + str(tcph_checksum))
+            print("\t|-Urgent Pointer       : " + str(tcph_urgent_pointer))
 
             h_size = eth_length + iph_length + tcph_length * 4
             data_size = len(packet) - h_size
@@ -117,8 +156,11 @@ def parse_packet(packet) :
             icmp_type = icmph[0]
             code = icmph[1]
             checksum = icmph[2]
-
-            print ('Type : ' + str(icmp_type) + ' Code : ' + str(code) + ' Checksum : ' + str(checksum))
+            
+            print('\nICMP Header')
+            print("\t|-Type       : " + str(icmp_type))
+            print("\t|-Code       : " + str(code))
+            print("\t|-Checksum   : " + str(checksum))
 
             h_size = eth_length + iph_length + icmph_length
             data_size = len(packet) - h_size
@@ -142,7 +184,11 @@ def parse_packet(packet) :
             length = udph[2]
             checksum = udph[3]
 
-            print ('Source Port : ' + str(source_port) + ' Dest Port : ' + str(dest_port) + ' Length : ' + str(length) + ' Checksum : ' + str(checksum))
+            print('\nUDP Header')
+            print("\tSource Port : " + str(source_port))
+            print("\tDest Port   : " + str(dest_port))
+            print("\tLength      : " + str(length))
+            print("\tChecksum    : " + str(checksum))
 
             h_size = eth_length + iph_length + udph_length
             data_size = len(packet) - h_size
